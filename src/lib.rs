@@ -5,7 +5,7 @@ use hsl::HSL;
 
 pub mod video {
     // maps HSL lightness value to an ASCII character
-    pub fn map_lightness_to_char(lightness: u8) -> char {
+    fn map_lightness_to_char(lightness: u8) -> char {
         if lightness >= 87.5 {
             return '$';
         } else if lightness >= 75 {
@@ -24,16 +24,25 @@ pub mod video {
             return '`';
         }
     }
+
     pub struct Video {
         filename: String,
+        frames: Vec<Vec<char>>,
     }
+
     impl Video {
+        pub fn new(path: String) -> Video {
+            Video {
+                filename: path,
+            }
+        }
         pub fn extract_frames(&self) -> Vec<Vec<HSL>> {
+            // extract individual frames from a video
             video_rs::init()?;
             let source = Locator::Path(std::path::PathBuf::from(self.filename));
             let mut decoder = Decoder::new(&source)?;
 
-            let mut all_pixels: Vec<Vec<HSL>> = Vec::new();
+            let mut frames: Vec<Vec<HSL>> = Vec::new();
 
             for frame_result in decoder.decode_iter() {
                 if let Ok((_timestamp, frame)) = frame_result {
@@ -52,17 +61,22 @@ pub mod video {
                             frame_pixels.push(hsl);
                         }
                     }
-                    all_pixels.push(frame_pixels);
+                    frames.push(frame_pixels);
                 } else {
                     break; // video end
                 }
             }
         }
-        pub fn new(path: String) -> Video {
-            Video {
-                filename: filename,
+        pub fn convert_to_ascii(frames: Vec<Vec<HSL>>) -> Vec<Vec<char>> {
+            let mut frames_buf = Vec::new()
+            for i in frames {
+                for j in frames[i] {
+                    let mut frame_buf = Vec::new();
+                    frame_buf.push(map_lightness_to_char(j.l));
+                }
             }
         }
     }
+    // pub fn play_video(video: Video) {}
 }
 // lib.rs
