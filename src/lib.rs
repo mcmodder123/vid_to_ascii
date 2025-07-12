@@ -92,4 +92,19 @@ pub mod video {
         sleep(1/video.fps);
     }
 }
+
+pub mod args {
+    fn print_help(args:) {
+        println!("Usage: {} <filename> <fps>", args[0])
+    }
+
+    pub fn parse_args(args: Vec<String>) -> video::Video {
+        if args.len() < 3 {
+            print_help(args);
+            panic!("Not enough arguments!");
+        }
+        let mut video = video::Video::new(String::from(args[1]), args[2]);
+        video
+    }
+}
 // lib.rs
