@@ -1,6 +1,7 @@
 // Written by Juan Manuel Rodriguez (mcmodder123)
 
 use video_rs::{self, Decoder, Locator};
+use std::thread::sleep;
 use hsl::HSL;
 
 pub mod video {
@@ -27,13 +28,15 @@ pub mod video {
 
     pub struct Video {
         filename: String,
-        frames: Vec<Vec<char>>,
+        fps: u32
+        // frames: Vec<Vec<char>>,
     }
 
     impl Video {
-        pub fn new(path: String) -> Video {
+        pub fn new(path: String, fps: u32) -> Video {
             Video {
                 filename: path,
+                fps: fps,
             }
         }
         pub fn extract_frames(&self) -> Vec<Vec<HSL>> {
@@ -66,8 +69,11 @@ pub mod video {
                     break; // video end
                 }
             }
+            frames
         }
+
         pub fn convert_to_ascii(frames: Vec<Vec<HSL>>) -> Vec<Vec<char>> {
+            // converts video frames to ASCII
             let mut frames_buf = Vec::new()
             for i in frames {
                 for j in frames[i] {
@@ -77,6 +83,13 @@ pub mod video {
             }
         }
     }
-    // pub fn play_video(video: Video) {}
+    pub fn play_video(video: Video) {
+        // plays the newly created ASCII video
+        ascii_frames = convert_to_ascii(video.extract_frames());
+        for i in ascii_frames {
+            print!("{}", ascii_frames[i]);
+        }
+        sleep(1/video.fps);
+    }
 }
 // lib.rs
