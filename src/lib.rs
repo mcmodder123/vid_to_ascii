@@ -99,9 +99,9 @@ pub mod video {
         let frame_duration = Duration::from_secs_f64(1.0 / video.fps as f64);
 
         for frame_str in ascii_frames {
-            print!("{}", frame_str);
-        }
-        sleep(frame_duration);
+            print!("\x1B[2J\x1B[1;1H{}", frame_str);
+            sleep(frame_duration);
+        } 
         Ok(())
     }
 }
