@@ -1,64 +1,68 @@
 // Written by Juan Manuel Rodriguez (mcmodder123)
 
-use video_rs::{self, Decoder, Locator};
-use std::thread::sleep;
-use hsl::HSL;
-
 pub mod video {
+    pub use hsl::HSL;
+    use std::error::Error;
+    use std::thread::sleep;
+    use std::time::Duration;
+    use video_rs::{self, Decoder, Location};
+
     // maps HSL lightness value to an ASCII character
-    fn map_lightness_to_char(lightness: u8) -> char {
-        if lightness >= 87.5 {
+    fn map_lightness_to_char(lightness: f64) -> char {
+        if lightness >= 0.875 {
             return '$';
-        } else if lightness >= 75 {
+        } else if lightness >= 0.750 {
             return '#';
-        } else if lightness >= 62.5 {
+        } else if lightness >= 0.625 {
             return '@';
-        } else if lightness >= 50 {
+        } else if lightness >= 0.500 {
             return '%';
-        } else if lightness >= 37.5 {
+        } else if lightness >= 0.375 {
             return '*';
-        } else if lightness >= 25 {
+        } else if lightness >= 0.250 {
             return '~';
-        } else if lightness >= 12.5 {
+        } else if lightness >= 0.125 {
             return ',';
         } else {
             return '`';
         }
     }
 
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
     pub struct Video {
         filename: String,
-        fps: u32
-        // frames: Vec<Vec<char>>,
+        pub fps: u32,
     }
 
     impl Video {
         pub fn new(path: String, fps: u32) -> Video {
             Video {
                 filename: path,
-                fps: fps,
+                fps,
             }
         }
-        pub fn extract_frames(&self) -> Vec<Vec<HSL>> {
+        pub fn extract_frames(&self) -> Result<Vec<Vec<HSL>>, Box<dyn Error>> {
             // extract individual frames from a video
             video_rs::init()?;
-            let source = Locator::Path(std::path::PathBuf::from(self.filename));
+            println!("Extracting frames from video...");
+            let source = Location::File(std::path::PathBuf::from(&self.filename));
             let mut decoder = Decoder::new(&source)?;
 
             let mut frames: Vec<Vec<HSL>> = Vec::new();
 
-            for frame_result in decoder.decode_iter() {
-                if let Ok((_timestamp, frame)) = frame_result {
-                    let width = frame.width();
-                    let hieght = frame.height();
+            for frame_result in decoder.decode_raw_iter() {
+                if let Ok(current_frame) = frame_result {
+                    let width = current_frame.width();
+                    let height = current_frame.height();
                     let mut frame_pixels: Vec<HSL> = Vec::new();
 
                     for y in 0..height {
                         for x in 0..width {
-                            let pixel_index = ( y * width + x) as usize * 3;
-                            let r = frame.data()[pixel_index];
-                            let g = frame.data()[pixel_index + 1];
-                            let b = frame.data()[pixel_index + 2];
+                            let pixel_index = (y * width + x) as usize * 3;
+                            println!("Pixel index: {}", pixel_index);
+                            let r = current_frame.data(0)[pixel_index];
+                            let g = current_frame.data(0)[pixel_index + 1];
+                            let b = current_frame.data(0)[pixel_index + 2];
 
                             let hsl = HSL::from_rgb(&[r, g, b]);
                             frame_pixels.push(hsl);
@@ -66,44 +70,57 @@ pub mod video {
                     }
                     frames.push(frame_pixels);
                 } else {
-                    break; // video end
+                    break; // video has ended
                 }
             }
-            frames
+            Ok(frames)
         }
 
-        pub fn convert_to_ascii(frames: Vec<Vec<HSL>>) -> Vec<Vec<char>> {
+        pub fn convert_to_ascii(frames: Vec<Vec<HSL>>) -> Vec<String> {
             // converts video frames to ASCII
-            let mut frames_buf = Vec::new()
-            for i in frames {
-                for j in frames[i] {
-                    let mut frame_buf = Vec::new();
-                    frame_buf.push(map_lightness_to_char(j.l));
+            println!("Converting frames to ASCII...");
+            let mut ascii_frames = Vec::new();
+
+            for frame in frames {
+                let mut ascii_frame = String::new();
+                for pixel in frame {
+                    ascii_frame.push(map_lightness_to_char(pixel.l));
                 }
+                ascii_frames.push(ascii_frame);
             }
+            ascii_frames
         }
     }
-    pub fn play_video(video: Video) {
+    pub fn play_video(video: &Video) -> Result<(), Box<dyn Error>> {
         // plays the newly created ASCII video
-        ascii_frames = convert_to_ascii(video.extract_frames());
-        for i in ascii_frames {
-            print!("{}", ascii_frames[i]);
+        println!("Attempting to play video... {:?}", video);
+        let extracted_frames = video.extract_frames()?;
+        let ascii_frames = Video::convert_to_ascii(extracted_frames);
+        let frame_duration = Duration::from_secs_f64(1.0 / video.fps as f64);
+
+        for frame_str in ascii_frames {
+            print!("{}", frame_str);
         }
-        sleep(1/video.fps);
+        sleep(frame_duration);
+        Ok(())
     }
 }
 
 pub mod args {
-    fn print_help(args:) {
+    pub use super::video::Video;
+
+    fn print_help(args: Vec<String>) {
         println!("Usage: {} <filename> <fps>", args[0])
     }
 
-    pub fn parse_args(args: Vec<String>) -> video::Video {
+    pub fn parse_args(args: Vec<String>) -> Video {
         if args.len() < 3 {
             print_help(args);
             panic!("Not enough arguments!");
         }
-        let mut video = video::Video::new(String::from(args[1]), args[2]);
+        let fps: u32 = args[2].parse().expect("The FPS argument must be a number");
+
+        let video = Video::new(args[1].clone(), fps);
         video
     }
 }

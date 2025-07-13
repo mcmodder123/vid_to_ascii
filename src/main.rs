@@ -6,6 +6,7 @@ use vid_to_ascii::{args, video};
 
 fn main() {
     let args = env::args().collect();
-    let video = parse_args(args);
-    play_video(video);
+    println!("Creating video configuration...");
+    let video = args::parse_args(args);
+    let _ = video::play_video(&video);
 } // main.rs
