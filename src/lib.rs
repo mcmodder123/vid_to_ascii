@@ -66,7 +66,6 @@ pub mod video {
     }
     pub fn play_video(video: &Video) -> Result<(), Box<dyn Error>> {
         // plays the newly created ASCII video
-        println!("Attempting to play video... {:?}", video);
         video_rs::init()?;
         let source = Location::File(PathBuf::from(&video.filename));
         let mut decoder = Decoder::new(&source)?;
