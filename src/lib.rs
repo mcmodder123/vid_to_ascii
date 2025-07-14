@@ -3,9 +3,10 @@
 pub mod video {
     pub use hsl::HSL;
     use std::error::Error;
+    use std::path::PathBuf;
     use std::thread::sleep;
     use std::time::Duration;
-    use video_rs::{self, Decoder, Location};
+    use video_rs::{self, Decoder, Frame, Location};
 
     // maps HSL lightness value to an ASCII character
     fn map_lightness_to_char(lightness: f64) -> char {
@@ -41,67 +42,48 @@ pub mod video {
                 fps,
             }
         }
-        pub fn extract_frames(&self) -> Result<Vec<Vec<HSL>>, Box<dyn Error>> {
-            // extract individual frames from a video
-            video_rs::init()?;
-            println!("Extracting frames from video...");
-            let source = Location::File(std::path::PathBuf::from(&self.filename));
-            let mut decoder = Decoder::new(&source)?;
 
-            let mut frames: Vec<Vec<HSL>> = Vec::new();
-
-            for frame_result in decoder.decode_raw_iter() {
-                if let Ok(current_frame) = frame_result {
-                    let width = current_frame.width();
-                    let height = current_frame.height();
-                    let mut frame_pixels: Vec<HSL> = Vec::new();
-
-                    for y in 0..height {
-                        for x in 0..width {
-                            let pixel_index = (y * width + x) as usize * 3;
-                            println!("Pixel index: {}", pixel_index);
-                            let r = current_frame.data(0)[pixel_index];
-                            let g = current_frame.data(0)[pixel_index + 1];
-                            let b = current_frame.data(0)[pixel_index + 2];
-
-                            let hsl = HSL::from_rgb(&[r, g, b]);
-                            frame_pixels.push(hsl);
-                        }
-                    }
-                    frames.push(frame_pixels);
-                } else {
-                    break; // video has ended
-                }
-            }
-            Ok(frames)
-        }
-
-        pub fn convert_to_ascii(frames: Vec<Vec<HSL>>) -> Vec<String> {
+        pub fn convert_to_ascii(frame: Frame) -> String {
             // converts video frames to ASCII
-            println!("Converting frames to ASCII...");
-            let mut ascii_frames = Vec::new();
+            let shape = frame.shape();
+            let height = shape[0];
+            let width = shape[1];
+            let mut ascii_frame = String::new();
 
-            for frame in frames {
-                let mut ascii_frame = String::new();
-                for pixel in frame {
-                    ascii_frame.push(map_lightness_to_char(pixel.l));
+            for y in 0..height {
+                for x in 0..width {
+                    let r = frame[[y, x, 0]];
+                    let g = frame[[y, x, 1]];
+                    let b = frame[[y, x, 2]];
+
+                    let hsl = HSL::from_rgb(&[r, g, b]);
+                    ascii_frame.push(map_lightness_to_char(hsl.l));
                 }
-                ascii_frames.push(ascii_frame);
+                ascii_frame.push('\n');
             }
-            ascii_frames
+            ascii_frame
         }
     }
     pub fn play_video(video: &Video) -> Result<(), Box<dyn Error>> {
         // plays the newly created ASCII video
         println!("Attempting to play video... {:?}", video);
-        let extracted_frames = video.extract_frames()?;
-        let ascii_frames = Video::convert_to_ascii(extracted_frames);
+        video_rs::init()?;
+        let source = Location::File(PathBuf::from(&video.filename));
+        let mut decoder = Decoder::new(&source)?;
+
         let frame_duration = Duration::from_secs_f64(1.0 / video.fps as f64);
 
-        for frame_str in ascii_frames {
-            print!("\x1B[2J\x1B[1;1H{}", frame_str);
-            sleep(frame_duration);
-        } 
+        for frame_result in decoder.decode_iter() {
+            if let Ok((_, frame)) = frame_result {
+                let ascii_frame = Video::convert_to_ascii(frame);
+                print!("\x1B[2J\x1B[1;1H{}", ascii_frame);
+                sleep(frame_duration);
+            } else if let Err(e) = frame_result {
+                return Err(Box::new(e));
+            } else {
+                break;
+            }
+        }
         Ok(())
     }
 }
@@ -123,5 +105,4 @@ pub mod args {
         let video = Video::new(args[1].clone(), fps);
         video
     }
-}
-// lib.rs
+} // lib.rs
