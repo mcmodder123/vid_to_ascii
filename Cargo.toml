@@ -3,6 +3,12 @@ name = "vid_to_ascii"
 version = "0.1.0"
 edition = "2024"
 
+[profile.dev]
+opt-level = 0
+
+[profile.release]
+opt-level = 's'
+
 [dependencies]
 hsl = "0.1.1"
 video-rs = { version = "0.10.3", features = ["ndarray"] }

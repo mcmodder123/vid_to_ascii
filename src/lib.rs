@@ -33,13 +33,17 @@ pub mod video {
     pub struct Video {
         filename: String,
         pub fps: u32,
+        pub width: u32,
+        pub height: u32,
     }
 
     impl Video {
-        pub fn new(path: String, fps: u32) -> Video {
+        pub fn new(path: String, fps: u32, width: u32, height: u32) -> Video {
             Video {
                 filename: path,
                 fps,
+                width,
+                height,
             }
         }
 
@@ -68,6 +72,8 @@ pub mod video {
         // plays the newly created ASCII video
         video_rs::init()?;
         let source = Location::File(PathBuf::from(&video.filename));
+        
+
         let mut decoder = Decoder::new(&source)?;
 
         let frame_duration = Duration::from_secs_f64(1.0 / video.fps as f64);
@@ -91,17 +97,19 @@ pub mod args {
     pub use super::video::Video;
 
     fn print_help(args: Vec<String>) {
-        println!("Usage: {} <filename> <fps>", args[0])
+        println!("Usage: {} <filename> <fps> <width> <height>", args[0])
     }
 
     pub fn parse_args(args: Vec<String>) -> Video {
-        if args.len() < 3 {
+        if args.len() < 5 {
             print_help(args);
             panic!("Not enough arguments!");
         }
-        let fps: u32 = args[2].parse().expect("The FPS argument must be a number");
+        let fps = args[2].parse().expect("The FPS argument must be a number.");
+        let width = args[3].parse().expect("The width argument must be a number.");
+        let height = args[4].parse().expect("The height argument must be a number");
 
-        let video = Video::new(args[1].clone(), fps);
+        let video = Video::new(args[1].clone(), fps, width, height);
         video
     }
 } // lib.rs
