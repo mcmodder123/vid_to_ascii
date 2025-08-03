@@ -18,7 +18,7 @@ A command line-tool written in Rust to convert video files into ASCII art and pl
     ```
   - On Arch Linux:
     ```Bash
-    
+    sudo pacman -Syu ffmpeg
     ```
   - On Debian / Ubuntu:
     ```Bash
