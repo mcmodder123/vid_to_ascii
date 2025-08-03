@@ -1,34 +1,60 @@
 // Written by Juan Manuel Rodriguez (mcmodder123)
 
 pub mod video {
-    pub use hsl::HSL;
+    use hsl::HSL;
     use std::error::Error;
     use std::path::PathBuf;
     use std::thread::sleep;
     use std::time::Duration;
     use video_rs::{self, Decoder, Frame, Location};
 
-    // maps HSL lightness value to an ASCII character
-    pub fn map_lightness_to_char(lightness: f64) -> char {
-        if lightness >= 0.875 {
+    /// Maps an HSL lightness value to an ASCII character.
+    ///
+    /// # Arguments
+    /// * `l: f64` - HSL lightness value.
+    ///
+    /// # Examples
+    /// ```
+    /// use vid_to_ascii::map_lightness_to_char;
+    /// use hsl::HSL;
+    ///
+    /// let yellow = [255, 255, 0];
+    /// let yellow_hsl = HSL::from_rgb(&yellow);
+    ///
+    /// assert_eq!(map_lightness_to_char(yellow_hsl.l /* 0.5_f64 */), '%');
+    /// ```
+    pub fn map_lightness_to_char(l: f64) -> char {
+        if l >= 0.875 {
             '$'
-        } else if lightness >= 0.750 {
+        } else if l >= 0.750 {
             '#'
-        } else if lightness >= 0.625 {
+        } else if l >= 0.625 {
             '@'
-        } else if lightness >= 0.500 {
+        } else if l >= 0.500 {
             '%'
-        } else if lightness >= 0.375 {
+        } else if l >= 0.375 {
             '*'
-        } else if lightness >= 0.250 {
+        } else if l >= 0.250 {
             '~'
-        } else if lightness >= 0.125 {
+        } else if l >= 0.125 {
             ','
         } else {
             '`'
         }
     }
 
+    /// Represents a video with its filename and FPS.
+    ///
+    /// This struct holds basic information about a video file.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use vid_to_ascii::video::*;
+    ///
+    /// let video = Video::new("my_awesome_video.mp4", 60);
+    /// let _ = play_video(&video);
+    /// ```
     #[derive(Debug, Clone, PartialEq, Eq, Hash)]
     pub struct Video {
         pub filename: String,
@@ -43,13 +69,15 @@ pub mod video {
             }
         }
 
-        pub fn convert_to_ascii(frame: Frame) -> String {
-            // converts video frames to ASCII
+        /// Converts a video_rs::Frame to a String.
+        ///
+        fn convert_to_ascii(frame: Frame) -> String {
             let shape = frame.shape();
             let height = shape[0];
             let width = shape[1];
             let mut ascii_frame = String::new();
 
+            // Iterate through each pixel and map it to a character.
             for y in 0..height {
                 for x in 0..width {
                     let r = frame[[y, x, 0]];
@@ -64,8 +92,21 @@ pub mod video {
             ascii_frame
         }
     }
+
+    /// Converts a Video to ASCII and plays it in real time.
+    ///
+    /// # Arguments
+    /// * `video` - An instance of the Video struct.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use vid_to_ascii::video::*;
+    ///
+    /// let video = Video::new("my_awesome_video.mp4", 60);
+    /// let _ = play_video(&video);
+    /// ```
     pub fn play_video(video: &Video) -> Result<(), Box<dyn Error>> {
-        // plays the newly created ASCII video
         video_rs::init()?;
         let source = Location::File(PathBuf::from(&video.filename));
 
@@ -89,12 +130,15 @@ pub mod video {
 }
 
 pub mod args {
+    // args module.
     pub use super::video::Video;
 
+    /// Output help message.
     fn print_help(args: Vec<String>) {
         println!("Usage: {} <filename> <fps>", args[0])
     }
 
+    /// Parse arguments to create a Video instance.
     pub fn parse_args(args: Vec<String>) -> Video {
         if args.len() < 3 {
             print_help(args);
@@ -108,6 +152,7 @@ pub mod args {
 
 #[cfg(test)]
 mod tests {
+    // tests
     use super::*;
 
     #[test]
