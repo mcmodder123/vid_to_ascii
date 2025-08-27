@@ -1,4 +1,4 @@
-// Written by Juan Manuel Rodriguez (mcmodder123)
+/* Written by Juan Manuel Rodriguez (mcmodder123). */
 
 pub mod video {
     use hsl::HSL;
