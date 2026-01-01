@@ -43,9 +43,9 @@ A command line-tool written in Rust to convert video files into ASCII art and pl
 
 ## Usage
 1. Turn down your font size, and run the program from your terminal by providing the path to a video file and the desired FPS as arguments as shown below.
-Syntax:
+<br>Syntax:
 `./target/release/vid_to_ascii <path-to-video> <fps>`
-Example:
+<br>Example:
 ```Bash
 ./target/release/vid_to_ascii "my_awesome_video.mp4" 24
 ```
